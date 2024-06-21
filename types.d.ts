@@ -307,6 +307,11 @@ type AssetInfo = KnownAssetInfo & Record<string, any>;
  */
 declare interface AssetInlineGeneratorOptions {
 	/**
+	 * Whether or not this asset module should be considered binary. This can be set to 'false' to treat this asset module as text.
+	 */
+	binary?: boolean;
+
+	/**
 	 * The options for data url generator.
 	 */
 	dataUrl?:
@@ -346,6 +351,11 @@ declare interface AssetParserOptions {
  * Generator options for asset/resource modules.
  */
 declare interface AssetResourceGeneratorOptions {
+	/**
+	 * Whether or not this asset module should be considered binary. This can be set to 'false' to treat this asset module as text.
+	 */
+	binary?: boolean;
+
 	/**
 	 * Emit an output asset from this asset module. This can be set to 'false' to omit emitting e. g. for SSR.
 	 */
@@ -429,9 +439,6 @@ declare interface AsyncWebAssemblyModulesPluginOptions {
 	 * mangle imports
 	 */
 	mangleImports?: boolean;
-}
-declare interface Attributes {
-	[index: string]: any;
 }
 declare class AutomaticPrefetchPlugin {
 	constructor();
@@ -2303,6 +2310,7 @@ declare class Compiler {
 	fsStartTime?: number;
 	resolverFactory: ResolverFactory;
 	infrastructureLogger?: (arg0: string, arg1: LogTypeEnum, arg2: any[]) => void;
+	platform: Readonly<PlatformTargetProperties>;
 	options: WebpackOptionsNormalized;
 	context: string;
 	requestShortener: RequestShortener;
@@ -2900,7 +2908,7 @@ declare interface ContextModuleOptions {
 	 */
 	referencedExports?: null | string[][];
 	layer?: string;
-	attributes?: Attributes;
+	attributes?: ImportAttributes;
 	resource: string | false | string[];
 	resourceQuery?: string;
 	resourceFragment?: string;
@@ -3299,6 +3307,17 @@ declare abstract class DependencyTemplates {
 	updateHash(part: string): void;
 	getHash(): string;
 	clone(): DependencyTemplates;
+}
+
+/**
+ * Helper function for joining two ranges into a single range. This is useful
+ * when working with AST nodes, as it allows you to combine the ranges of child nodes
+ * to create the range of the _parent node_.
+ */
+declare interface DestructuringAssignmentProperty {
+	id: string;
+	range?: [number, number];
+	shorthand: string | boolean;
 }
 declare class DeterministicChunkIdsPlugin {
 	constructor(options?: DeterministicChunkIdsPluginOptions);
@@ -5090,7 +5109,11 @@ declare interface HandleModuleCreationOptions {
 	checkCycle?: boolean;
 }
 declare class HarmonyImportDependency extends ModuleDependency {
-	constructor(request: string, sourceOrder: number, attributes?: Attributes);
+	constructor(
+		request: string,
+		sourceOrder: number,
+		attributes?: ImportAttributes
+	);
 	sourceOrder: number;
 	getImportVar(moduleGraph: ModuleGraph): string;
 	getImportStatement(
@@ -5169,8 +5192,8 @@ declare interface HashedModuleIdsPluginOptions {
 }
 declare abstract class HelperRuntimeModule extends RuntimeModule {}
 declare class HotModuleReplacementPlugin {
-	constructor(options?: Object);
-	options: Object;
+	constructor(options?: object);
+	options: object;
 
 	/**
 	 * Apply the plugin
@@ -5323,8 +5346,9 @@ type IgnorePluginOptions =
 			 */
 			checkResource: (resource: string, context: string) => boolean;
 	  };
+type ImportAttributes = Record<string, string> & {};
 declare interface ImportDependencyMeta {
-	attributes?: Attributes;
+	attributes?: ImportAttributes;
 }
 declare interface ImportModuleOptions {
 	/**
@@ -5957,12 +5981,15 @@ declare class JavascriptParser extends Parser {
 		| ExportNamedDeclaration
 		| ExportDefaultDeclaration
 		| ExportAllDeclaration;
-	destructuringAssignmentProperties?: WeakMap<Expression, Set<string>>;
+	destructuringAssignmentProperties?: WeakMap<
+		Expression,
+		Set<DestructuringAssignmentProperty>
+	>;
 	currentTagData: any;
 	magicCommentContext: Context;
 	destructuringAssignmentPropertiesFor(
 		node: Expression
-	): undefined | Set<string>;
+	): undefined | Set<DestructuringAssignmentProperty>;
 	getRenameIdentifier(
 		expr: Expression
 	): undefined | string | VariableInfoInterface;
@@ -7311,7 +7338,7 @@ declare interface LibIdentOptions {
 	/**
 	 * object for caching
 	 */
-	associatedObjectForCache?: Object;
+	associatedObjectForCache?: object;
 }
 declare class LibManifestPlugin {
 	constructor(options: LibManifestPluginOptions);
@@ -8138,7 +8165,7 @@ declare class ModuleDependency extends Dependency {
 	request: string;
 	userRequest: string;
 	range: any;
-	assertions?: Attributes;
+	assertions?: ImportAttributes;
 	static Template: typeof DependencyTemplate;
 	static NO_EXPORTS_REFERENCED: string[][];
 	static EXPORTS_OBJECT_REFERENCED: string[][];
@@ -8335,8 +8362,8 @@ declare class ModuleGraph {
 	setDepthIfLower(module: Module, depth: number): boolean;
 	isAsync(module: Module): boolean;
 	setAsync(module: Module): void;
-	getMeta(thing?: any): Object;
-	getMetaIfExisting(thing?: any): undefined | Object;
+	getMeta(thing?: any): object;
+	getMetaIfExisting(thing?: any): undefined | object;
 	freeze(cacheStage?: string): void;
 	unfreeze(): void;
 	cached<T extends any[], V>(
@@ -8869,14 +8896,14 @@ declare class NormalModule extends Module {
 		name: string,
 		content: string | Buffer,
 		sourceMap?: string | SourceMap,
-		associatedObjectForCache?: Object
+		associatedObjectForCache?: object
 	): Source;
 	getCurrentLoader(loaderContext?: any, index?: number): null | LoaderItem;
 	createSource(
 		context: string,
 		content: string | Buffer,
 		sourceMap?: string | SourceMapSource,
-		associatedObjectForCache?: Object
+		associatedObjectForCache?: object
 	): Source;
 	markModuleAsErrored(error: WebpackError): void;
 	applyNoParseRule(rule: any, content: string): boolean;
@@ -9010,8 +9037,8 @@ declare abstract class NormalModuleFactory extends ModuleFactory {
 	ruleSet: RuleSet;
 	context: string;
 	fs: InputFileSystem;
-	parserCache: Map<string, WeakMap<Object, Parser>>;
-	generatorCache: Map<string, WeakMap<Object, Generator>>;
+	parserCache: Map<string, WeakMap<object, Parser>>;
+	generatorCache: Map<string, WeakMap<object, Generator>>;
 	cleanupForCache(): void;
 	resolveResource(
 		contextInfo: ModuleFactoryCreateDataContextInfo,
@@ -10401,6 +10428,46 @@ declare interface PitchLoaderDefinitionFunction<
 		previousRequest: string,
 		data: object
 	): string | void | Buffer | Promise<string | Buffer>;
+}
+declare class PlatformPlugin {
+	constructor(platform: Partial<PlatformTargetProperties>);
+	platform: Partial<PlatformTargetProperties>;
+
+	/**
+	 * Apply the plugin
+	 */
+	apply(compiler: Compiler): void;
+}
+declare interface PlatformTargetProperties {
+	/**
+	 * web platform, importing of http(s) and std: is available
+	 */
+	web: null | boolean;
+
+	/**
+	 * browser platform, running in a normal web browser
+	 */
+	browser: null | boolean;
+
+	/**
+	 * (Web)Worker platform, running in a web/shared/service worker
+	 */
+	webworker: null | boolean;
+
+	/**
+	 * node platform, require of node built-in modules is available
+	 */
+	node: null | boolean;
+
+	/**
+	 * nwjs platform, require of legacy nw.gui is available
+	 */
+	nwjs: null | boolean;
+
+	/**
+	 * electron platform, require of some electron built-in modules is available
+	 */
+	electron: null | boolean;
 }
 type Plugin =
 	| undefined
@@ -11872,6 +11939,12 @@ declare interface ResolvedContextTimestampAndHash {
 	timestampHash?: string;
 	hash: string;
 }
+declare interface ResolvedOptions {
+	/**
+	 * - platform target properties
+	 */
+	platform: false | PlatformTargetProperties;
+}
 declare abstract class Resolver {
 	fileSystem: FileSystem;
 	options: ResolveOptionsResolverFactoryObject1;
@@ -11928,7 +12001,7 @@ declare abstract class Resolver {
 	normalize(path: string): string;
 }
 declare interface ResolverCache {
-	direct: WeakMap<Object, ResolverWithOptions>;
+	direct: WeakMap<object, ResolverWithOptions>;
 	stringified: Map<string, ResolverWithOptions>;
 }
 declare abstract class ResolverFactory {
@@ -12324,6 +12397,11 @@ declare interface RuleSetRule {
 				options?: string | { [index: string]: any };
 		  }
 		| __TypeWebpackOptions;
+
+	/**
+	 * Match on import attributes of the dependency.
+	 */
+	with?: { [index: string]: RuleSetConditionOrConditions };
 }
 type RuleSetUse =
 	| string
@@ -12891,10 +12969,6 @@ declare abstract class RuntimeTemplate {
 		 */
 		module: Module;
 		/**
-		 * the public path
-		 */
-		publicPath: string;
-		/**
 		 * runtime
 		 */
 		runtime?: RuntimeSpec;
@@ -12954,11 +13028,11 @@ declare abstract class Serializer {
 declare abstract class SerializerMiddleware<DeserializedType, SerializedType> {
 	serialize(
 		data: DeserializedType,
-		context: Object
+		context: object
 	): SerializedType | Promise<SerializedType>;
 	deserialize(
 		data: SerializedType,
-		context: Object
+		context: object
 	): DeserializedType | Promise<DeserializedType>;
 }
 type ServerOptionsHttps<
@@ -13581,7 +13655,7 @@ type StatsCompilation = KnownStatsCompilation & Record<string, any>;
 type StatsError = KnownStatsError & Record<string, any>;
 declare abstract class StatsFactory {
 	hooks: Readonly<{
-		extract: HookMap<SyncBailHook<[Object, any, StatsFactoryContext], any>>;
+		extract: HookMap<SyncBailHook<[object, any, StatsFactoryContext], any>>;
 		filter: HookMap<
 			SyncBailHook<[any, StatsFactoryContext, number, number], any>
 		>;
@@ -14086,7 +14160,7 @@ declare abstract class StatsPrinter {
 		print: HookMap<SyncBailHook<[{}, StatsPrinterContext], string>>;
 		result: HookMap<SyncWaterfallHook<[string, StatsPrinterContext]>>;
 	}>;
-	print(type: string, object: Object, baseContext?: Object): string;
+	print(type: string, object: object, baseContext?: object): string;
 }
 type StatsPrinterContext = KnownStatsPrinterContext & Record<string, any>;
 type StatsProfile = KnownStatsProfile & Record<string, any>;
@@ -15064,7 +15138,7 @@ declare namespace exports {
 		export const applyWebpackOptionsDefaults: (
 			options: WebpackOptionsNormalized,
 			compilerIndex?: number
-		) => void;
+		) => ResolvedOptions;
 	}
 	export namespace dependencies {
 		export {
@@ -15340,6 +15414,16 @@ declare namespace exports {
 			export { MEASURE_START_OPERATION, MEASURE_END_OPERATION };
 		}
 		export const cleverMerge: <T, O>(first: T, second: O) => T | O | (T & O);
+		export function compileBooleanMatcher(
+			map: Record<string | number, boolean>
+		): boolean | ((arg0: string) => string);
+		export namespace compileBooleanMatcher {
+			export let fromLists: (
+				positiveItems: string[],
+				negativeItems: string[]
+			) => (arg0: string) => string;
+			export let itemsToRegexp: (itemsArr: string[]) => string;
+		}
 		export { LazySet };
 	}
 	export namespace sources {
@@ -15412,6 +15496,7 @@ declare namespace exports {
 		NormalModuleReplacementPlugin,
 		MultiCompiler,
 		Parser,
+		PlatformPlugin,
 		PrefetchPlugin,
 		ProgressPlugin,
 		ProvidePlugin,

@@ -67,6 +67,7 @@ const describeCases = config => {
 						const testDirectory = path.join(casesPath, category.name, testName);
 						const filterPath = path.join(testDirectory, "test.filter.js");
 						if (fs.existsSync(filterPath) && !require(filterPath)(config)) {
+							// eslint-disable-next-line jest/no-disabled-tests
 							describe.skip(testName, () => {
 								it("filtered", () => {});
 							});
@@ -198,8 +199,10 @@ const describeCases = config => {
 								fs.mkdirSync(outputDirectory, { recursive: true });
 								infraStructureLog.length = 0;
 								const deprecationTracker = deprecationTracking.start();
-								require("..")(options, err => {
+								const compiler = require("..")(options);
+								compiler.run(err => {
 									deprecationTracker();
+									if (err) return handleFatalError(err, done);
 									const infrastructureLogging = stderr.toString();
 									if (infrastructureLogging) {
 										return done(
@@ -229,8 +232,10 @@ const describeCases = config => {
 									) {
 										return;
 									}
-									if (err) return handleFatalError(err, done);
-									done();
+									compiler.close(closeErr => {
+										if (closeErr) return handleFatalError(closeErr, done);
+										done();
+									});
 								});
 							}, 60000);
 							it(`${testName} should pre-compile to fill disk cache (2nd)`, done => {
@@ -238,7 +243,8 @@ const describeCases = config => {
 								fs.mkdirSync(outputDirectory, { recursive: true });
 								infraStructureLog.length = 0;
 								const deprecationTracker = deprecationTracking.start();
-								require("..")(options, (err, stats) => {
+								const compiler = require("..")(options);
+								compiler.run((err, stats) => {
 									deprecationTracker();
 									if (err) return handleFatalError(err, done);
 									const { modules, children, errorsCount } = stats.toJson({
@@ -298,7 +304,10 @@ const describeCases = config => {
 									) {
 										return;
 									}
-									done();
+									compiler.close(closeErr => {
+										if (closeErr) return handleFatalError(closeErr, done);
+										done();
+									});
 								});
 							}, 40000);
 						}
